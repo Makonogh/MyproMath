@@ -19,6 +19,10 @@ void DrawWood(const Capsule& cap, int handle) {
 		cap.posA.x + w, cap.posA.y + h, handle,true);
 }
 
+float Clamp(float value, float minVal = 0.0f, float maxVal = 1.0f)
+{
+	return min(maxVal, max(minVal, value));
+}
 
 ///とある点を中心に回転して、その回転後の座標を返します。
 ///@param center 回転中心点
@@ -38,12 +42,20 @@ Matrix RotatePosition(const Position2& center, float angle) {
 	//これを書き換えて、特定の点を中心に回転を行うようにしてください。
 }
 
+
 //カプセルと円が当たったか？
 bool IsHit(const Capsule& cap, const Circle& cc) {
 
+	auto vp = cc.pos - cap.posA;
+	auto v = cap.posB - cap.posA;
+	auto dot = Dot(v, vp);
+	dot /= Dot(v, v);
+	dot = Clamp(dot);
+	auto vv = v * dot;
+	auto d = (vp - vv).Magnitude();
 
 
-	return false;
+	return d <= cap.radius + cc.radius;
 }	
 
 
@@ -51,7 +63,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ChangeWindowMode(true);
 	SetGraphMode(512, 800, 32);
 	DxLib_Init();
-	SetDrawScreen(DX_SCREEN_BACK);
+	
+	
+	SetWindowText("1916020 田中 真人");
 
 	int sw, sh;//スクリーン幅、高さ
 	GetDrawScreenSize(&sw, &sh);
@@ -69,7 +83,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	auto GameOver = LoadGraph("img/over.png");
 
 	Capsule cap(20,Position2((sw-wdW)/2,sh-100),Position2((sw - wdW) / 2+wdW,sh-100));
-	Circle rock(12,Position2(32 + GetRand(sw - 64),32));
+	Circle rock(12,Position2(44 + GetRand(sw - 76),32));
 
 	char keystate[256];
 	
@@ -78,11 +92,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	int frame = 0;
 	int oldR = 0;
 	int newR = 0;
-	bool isLeft = false;
+	int shakeFlame = 0;
+	int screenID = MakeScreen(512, 800, true);
+	Position2 SPos = {0,0};
 
+	bool RockFlag = false;
+	bool isLeft = false;
 	bool win = false;
 	bool lose = false;
 	while (ProcessMessage() == 0) {
+		SetDrawScreen(screenID);
 		ClearDrawScreen();
 		GetHitKeyStateAll(keystate);
 
@@ -122,9 +141,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			}
 
 			//当たり判定を完成させて当たったときの反応を書いてください
-			//if(IsHit(cap,circle)){
-			//	反応をここに書いてください。
-			//}
+			if(IsHit(cap,rock)){
+				rock.pos = Position2(44 + GetRand(sw - 76), 32);
+				shakeFlame++;
+				cap.posA.y += 75;
+				cap.posB.y += 75;
+			}
+			if (shakeFlame != 0)
+			{
+				SPos.x = GetRand(10) - 5;
+				SPos.y = GetRand(10) - 5;
+
+				shakeFlame++;
+				if (shakeFlame >= 15)
+				{
+					SPos.x = 0;
+					SPos.y = 0;
+					shakeFlame = 0;
+				}
+			}
 
 			//カプセル回転
 			Matrix rotMat = RotatePosition(Position2(mx, my), angle);
@@ -136,7 +171,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				cap.posA = MultipleVec(rotMat, cap.posA);
 				cap.posB = MultipleVec(rotMat, cap.posB);
 			}
-			if (cap.posA.y <= 48 && cap.posB.y <= 48)
+			if (cap.posA.y <= 56 && cap.posB.y <= 56)
 			{
 				win = true;
 			}
@@ -145,7 +180,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				win = false;
 			}
 
-			rock.pos.y++;
+			rock.pos.y += 4;
+			cap.posA.y ++;
+			cap.posB.y ++;
+		}
+
+		if (rock.pos.y > sh+16)
+		{
+			rock.pos = Position2(32 + GetRand(sw - 64), 32);
 		}
 
 		if ((abs(cap.posA.x - cap.posB.x) <= 5) || (cap.posA.y > sh + 16 && cap.posB.y > sh + 16))
@@ -159,6 +201,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			cap.posB.y += 6;
 		}
 
+	
 		//背景の描画
 		//滝
 		int chipIdx = (frame / 4) % 3;
@@ -187,8 +230,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			DrawRectGraph(sw - 32, destY, 32, 64, 32, 32, chipH, true);
 			destY += dest_chip_size;
 		}
-		DrawGraph(rock.pos.x,rock.pos.y,rockH,true);
-
+		if (RockFlag == false)
+		{
+			DrawGraph(rock.pos.x, rock.pos.y, rockH, true);
+		}
 		DrawWood(cap, woodH);
 		if (!win && !lose)
 		{
@@ -220,9 +265,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			cap.posA = Position2((sw - wdW) / 2, sh - 100);
 			cap.posB = Position2((sw - wdW) / 2 + wdW, sh - 100);
 
-			rock.pos = Position2(32 + GetRand(sw - 64), 32);
+			rock.pos = Position2(44 + GetRand(sw - 76), 32);
 		}
+		SetDrawScreen(DX_SCREEN_BACK);
 
+		ClsDrawScreen();
+		DrawGraph(SPos.x, SPos.y, screenID, true);
+
+		if (win || lose)
+		{
+			DrawString(sw / 2 -  85, sh / 2 + 120, "Press R to Restart", 0xff0000);
+		}
 		ScreenFlip();
 	}
 
