@@ -7,7 +7,6 @@ using namespace std;
 
 void DrawWood(const Capsule& cap, int handle) {
 
-
 	auto v = cap.posB - cap.posA;
 	auto angle = atan2(v.y, v.x) + DX_PI_F / 2.0f;
 	auto w = cos(angle)*cap.radius;
@@ -41,6 +40,9 @@ Matrix RotatePosition(const Position2& center, float angle) {
 
 //カプセルと円が当たったか？
 bool IsHit(const Capsule& cap, const Circle& cc) {
+
+
+
 	return false;
 }	
 
