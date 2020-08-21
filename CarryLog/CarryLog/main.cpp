@@ -171,7 +171,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				cap.posA = MultipleVec(rotMat, cap.posA);
 				cap.posB = MultipleVec(rotMat, cap.posB);
 			}
-			if (cap.posA.y <= 56 && cap.posB.y <= 56)
+			if (cap.posA.y <= 64 && cap.posB.y <= 64)
 			{
 				win = true;
 			}
