@@ -41,9 +41,7 @@ Matrix RotatePosition(const Position2& center, float angle) {
 //カプセルと円が当たったか？
 bool IsHit(const Capsule& cap, const Circle& cc) {
 
-
-
-	return false;
+	return HitCheck_Capsule_Capsule(cap.posA, cap.posB, float Cap1R, VECTOR Cap2Pos1, VECTOR Cap2Pos2, float Cap2R);
 }	
 
 
